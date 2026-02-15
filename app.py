@@ -1,33 +1,34 @@
-import streamlit as st
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from sklearn.linear_model import LogisticRegression
 import joblib
 
-# Load model and encoders
-model = joblib.load("loan_prediction_model.pkl")
-encoder = joblib.load("loan_encoder.pkl")
+data = {
+    "Gender": ["Male", "Female", "Male", "Female"],
+    "Education": ["Graduate", "Not Graduate", "Graduate", "Not Graduate"],
+    "ApplicantIncome": [5000, 3000, 6000, 2500],
+    "Loan_Status": ["Y", "N", "Y", "N"]
+}
 
-st.title("Loan Prediction App")
+df = pd.DataFrame(data)
 
-# Inputs
-gender = st.selectbox("Gender", encoder["Gender"].classes_)
-education = st.selectbox("Education", encoder["Education"].classes_)
-income = st.number_input("Applicant Income", min_value=0)
+le_gender = LabelEncoder()
+le_edu = LabelEncoder()
+le_status = LabelEncoder()
 
-# Create DataFrame
-df = pd.DataFrame({
-    "Gender": [gender],
-    "Education": [education],
-    "ApplicantIncome": [income]
-})
+df["Gender"] = le_gender.fit_transform(df["Gender"])
+df["Education"] = le_edu.fit_transform(df["Education"])
+df["Loan_Status"] = le_status.fit_transform(df["Loan_Status"])
 
-# Prediction
-if st.button("Predict"):
-    df["Gender"] = encoder["Gender"].transform(df["Gender"])
-    df["Education"] = encoder["Education"].transform(df["Education"])
+X = df[["Gender", "Education", "ApplicantIncome"]]
+y = df["Loan_Status"]
 
-    prediction = model.predict(df)
+model = LogisticRegression()
+model.fit(X, y)
 
-    if prediction[0] == 1:
-        st.write("Loan Approved")
-    else:
-        st.write("Loan Rejected")
+joblib.dump(model, "loan_prediction_model.pkl")
+joblib.dump(le_gender, "gender_encoder.pkl")
+joblib.dump(le_edu, "education_encoder.pkl")
+
+
+
